@@ -55,8 +55,7 @@ app.post('/api/chat', async (req, res) => {
             role: 'user',
             content: message,
           },
-        ],
-        stream: true,
+        ]
       }),
     });
 

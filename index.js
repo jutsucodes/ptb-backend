@@ -60,18 +60,14 @@ app.post('/api/chat', async (req, res) => {
       }),
     });
 
+res.json(response.json());
+res.status(200)
+
     if (!response.ok) {
       const errorText = await response.text();
       return res.status(response.status).json({ error: errorText });
     }
 
-    // Set headers for streaming
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    // Pipe the stream to client
-    response.body.pipe(res);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: error.message });

@@ -37,7 +37,19 @@ app.post('/api/chat', async (req, res) => {
         messages: [
           {
             role: 'system',
-            content: 'Format responses as plain text only. Do not use asterisks, hashtags, markdown, or citation numbers like [1], [2], etc. Keep it clear and human-readable.',
+            content: `{
+                  instructions: "Format responses as plain human-readable text only",
+                  restrictions: [
+                    "No asterisks",
+                    "No hashtags",
+                    "No markdown formatting",
+                    "No special formatting characters"
+                    "No citation numbers like [1], [2], [3]",
+                    "No reference brackets"
+                  ],
+                  style: "plain text with line breaks",
+                  tone: "clear and human-readable"
+                }`,
           },
           {
             role: 'user',

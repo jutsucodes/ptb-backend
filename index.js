@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const fetch = require('node-fetch');
+const mongoose = require("mongoose");
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 const app = express();
@@ -9,7 +10,40 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// CORS middleware (optional, if calling from different domain)
+(async function () {
+  await mongoose.connect('mongodb+srv://kumkumnidhi14_db_user:GHXoobG15VssW5dC@cluster0.xkgcby8.mongodb.net/PassTheBook?retryWrites=true&w=majority&appName=Cluster0');
+})();
+
+const booksetSchema = new mongoose.Schema(
+  {
+    class: { type: Number, required: true },
+    bookSet: { type: Object, required: true },
+    userId: { type: String, required: true },
+    board: { type: String, required: true },
+    giverDetails: {
+      name: { type: String, required: true },
+      email: { type: String },
+      whatsAppNum: { type: Number, required: true }
+    }
+  },
+  { timestamps: true }
+);
+
+mongoose.models = {};
+const Bookset = mongoose.model("Bookset", booksetSchema);
+
+// const userSchema = new mongoose.Schema({
+//     name: { type: String, required: true },
+//     email: { type: String, required: true, unique: true },
+//     whatsapp: { type: Number, required: true },
+//     booksets: { type: Array, required: true }
+// }, { timestamps: true });
+
+// mongoose.models = {};
+
+// const mongoose.model("User", userSchema);
+
+// CORS middleware
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -17,58 +51,23 @@ app.use((req, res, next) => {
   next();
 });
 
-// Chat endpoint
-app.post('/api/chat', async (req, res) => {
+app.get("/get-books", async (req, res) => {
   try {
-    const { message } = req.body;
-
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
-    }
-
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.PERPLEXITY_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'sonar',
-        messages: [
-          {
-            role: 'system',
-            content: `{
-                  instructions: "Format responses as plain human-readable text only",
-                  restrictions: [
-                    "No asterisks",
-                    "No hashtags",
-                    "No markdown formatting",
-                    "No special formatting characters"
-                    "No citation numbers like [1], [2], [3]",
-                    "No reference brackets"
-                  ],
-                  style: "plain text with line breaks",
-                  tone: "clear and human-readable"
-                }`,
-          },
-          {
-            role: 'user',
-            content: message,
-          },
-        ]
-      }),
-    });
-
-res.json(response.json());
-res.status(200)
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      return res.status(response.status).json({ error: errorText });
-    }
-
+    const { userId } = req.query;
+    const data = await Bookset.find(userId ? { userId } : {});
+    res.status(200).json(data);
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Server error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add book endpoint
+app.get('/add-book', async (req, res) => {
+  try {
+    await Bookset.insertOne(req.body);
+    res.status(200).json({ success: true });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });

@@ -1,7 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require("mongoose");
-const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 const app = express();
@@ -11,20 +10,23 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 (async function () {
-  await mongoose.connect('mongodb+srv://kumkumnidhi14_db_user:GHXoobG15VssW5dC@cluster0.xkgcby8.mongodb.net/PassTheBook?retryWrites=true&w=majority&appName=Cluster0');
+  await mongoose.connect("mongodb+srv://kumkumnidhi14_db_user:tvNlUOzDm7KEjNvU@cluster0.xkgcby8.mongodb.net/");
 })();
 
 const booksetSchema = new mongoose.Schema(
   {
-    class: { type: Number, required: true },
-    bookSet: { type: Object, required: true },
-    userId: { type: String, required: true },
-    board: { type: String, required: true },
+    title: { type: String },
+    subject: { type: String },
+    grade: Number,
+    condition: { type: String },
+    location: { type: String },
+    ownerName: { type: String },
+    board: { type: String },
     giverDetails: {
-      name: { type: String, required: true },
+      ownerName: { type: String },
       email: { type: String },
-      whatsAppNum: { type: Number, required: true }
-    }
+      whatsAppNum: { type: Number, required: true },
+    },
   },
   { timestamps: true }
 );
@@ -33,8 +35,8 @@ mongoose.models = {};
 const Bookset = mongoose.model("Bookset", booksetSchema);
 
 // const userSchema = new mongoose.Schema({
-//     name: { type: String, required: true },
-//     email: { type: String, required: true, unique: true },
+//     name: { type: { type: String }, required: true },
+//     email: { type: { type: String }, required: true, unique: true },
 //     whatsapp: { type: Number, required: true },
 //     booksets: { type: Array, required: true }
 // }, { timestamps: true });
@@ -55,6 +57,7 @@ app.get("/get-books", async (req, res) => {
   try {
     const { userId } = req.query;
     const data = await Bookset.find(userId ? { userId } : {});
+
     res.status(200).json(data);
   } catch (error) {
     console.error('Server error:', error);

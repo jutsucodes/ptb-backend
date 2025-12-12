@@ -15,12 +15,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 const booksetSchema = new mongoose.Schema(
   {
+    imgs: { type: Array },
     title: { type: String },
     subject: { type: String },
     grade: Number,
     condition: { type: String },
-    location: { type: String },
-    ownerName: { type: String },
     board: { type: String },
     giverDetails: {
       ownerName: { type: String },

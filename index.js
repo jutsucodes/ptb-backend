@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 (async function () {
-  await mongoose.connect("mongodb+srv://kumkumnidhi14_db_user:tvNlUOzDm7KEjNvU@cluster0.xkgcby8.mongodb.net/");
+  await mongoose.connect(process.env.MONGOOSE_URI);
 })();
 
 const booksetSchema = new mongoose.Schema(

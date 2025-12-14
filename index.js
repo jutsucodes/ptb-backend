@@ -74,7 +74,6 @@ app.get('/add-book', async (req, res) => {
   }
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'OK' });
 });

@@ -1,12 +1,20 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require("mongoose");
+const fetch = require("node-fetch");
+const cloudinary = require('cloudinary').v2;
 require('dotenv').config();
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+cloudinary.config({
+  cloud_name: 'your_cloud_name',
+  api_key: 'your_api_key',
+  api_secret: 'your_api_secret'
+});
 
 (async function () {
   await mongoose.connect(process.env.MONGOOSE_URI);
@@ -51,6 +59,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// Create an endpoint to generate signature
+app.post('/get-signature', (req, res) => {
+  const timestamp = Math.round(Date.now() / 1000);
+  
+  const paramsToSign = {
+    timestamp: timestamp,
+  };
+  
+  const signature = cloudinary.utils.api_sign_request(
+    paramsToSign,
+    "DlBrAhDeT4qZ8NKl4rC4LZk2Pyw"
+  );
+  
+  res.status(200).json({
+    signature: signature,
+    timestamp: timestamp,
+  });
+});
+
 app.get("/get-books", async (req, res) => {
   try {
     const { userId } = req.query;
@@ -65,8 +92,23 @@ app.get("/get-books", async (req, res) => {
 
 // Add book endpoint
 app.get('/add-book', async (req, res) => {
+  let body = { req };
+  let resp = await fetch("/get-signature");
+  let sigdata = await resp.json();
+
+  body.imgs.map(img => 
+    let res = await fetch("https://api.cloudinary.com/v1_1/dryhcd2gr/image/upload", {
+      method: "POST",
+      body: JSON.stringify({
+        file: img,
+        api_key: "653883944111699",
+        ...sigdata
+      })
+  }));
+  
+  delete body["imgs"];
   try {
-    await Bookset.insertOne(req.body);
+    await Bookset.insertOne(body);
     res.status(200).json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

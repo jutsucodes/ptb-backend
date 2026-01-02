@@ -1,30 +1,37 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const mongoose = require("mongoose");
-const { createClient } = require('@supabase/supabase-js');
+const fetch = require("node-fetch");
+const cloudinary = require('cloudinary').v2;
 require('dotenv').config();
 
 const app = express();
 
-// Middleware
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+cloudinary.config({
+  cloud_name: 'dryhcd2gr',
+  api_key: '653883944111699',
+  api_secret: 'DlBrAhDeT4qZ8NKl4rC4LZk2Pyw'
+});
 
 (async function () {
-  await mongoose.connect('mongodb+srv://kumkumnidhi14_db_user:GHXoobG15VssW5dC@cluster0.xkgcby8.mongodb.net/PassTheBook?retryWrites=true&w=majority&appName=Cluster0');
+  await mongoose.connect("mongodb+srv://kumkumnidhi14_db_user:tvNlUOzDm7KEjNvU@cluster0.xkgcby8.mongodb.net/PassTheBook");
 })();
 
 const booksetSchema = new mongoose.Schema(
   {
-    class: { type: Number, required: true },
-    bookSet: { type: Object, required: true },
-    userId: { type: String, required: true },
-    board: { type: String, required: true },
+    imgs: { type: Array },
+    title: { type: String },
+    subjects: { type: Array },
+    grade: Number,
+    condition: { type: String },
+    board: { type: String },
     giverDetails: {
-      name: { type: String, required: true },
+      ownerName: { type: String },
       email: { type: String },
-      whatsAppNum: { type: Number, required: true }
-    }
+      whatsAppNum: { type: Number, required: true },
+    },
   },
   { timestamps: true }
 );
@@ -33,8 +40,8 @@ mongoose.models = {};
 const Bookset = mongoose.model("Bookset", booksetSchema);
 
 // const userSchema = new mongoose.Schema({
-//     name: { type: String, required: true },
-//     email: { type: String, required: true, unique: true },
+//     name: { type: { type: String }, required: true },
+//     email: { type: { type: String }, required: true, unique: true },
 //     whatsapp: { type: Number, required: true },
 //     booksets: { type: Array, required: true }
 // }, { timestamps: true });
@@ -53,8 +60,11 @@ app.use((req, res, next) => {
 
 app.get("/get-books", async (req, res) => {
   try {
-    const { userId } = req.query;
-    const data = await Bookset.find(userId ? { userId } : {});
+    const { id } = req.query;
+    const data = await Bookset.find(id ? {
+  _id: { $in: id.split("+") }
+}: {});
+
     res.status(200).json(data);
   } catch (error) {
     console.error('Server error:', error);
@@ -63,16 +73,29 @@ app.get("/get-books", async (req, res) => {
 });
 
 // Add book endpoint
-app.get('/add-book', async (req, res) => {
+app.post('/add-book', express.json({ limit: '10mb' }), async (req, res) => {
+  const { body } = req;
+  
   try {
-    await Bookset.insertOne(req.body);
-    res.status(200).json({ success: true });
+    const uploadPromises = body.imgs.map(img => 
+      cloudinary.uploader.upload(img, {
+        upload_preset: "PassTheBook",
+      })
+    );
+
+    const uploadResults = await Promise.all(uploadPromises);
+    const imgUrls = uploadResults.map(result => result.secure_url);
+
+    const bookData = { ...body, imgs: imgUrls };
+    let bs = await Bookset.insertOne(bookData);
+
+    res.status(200).json({ success: true, id: bs._id });
   } catch (error) {
+    console.error("Upload Error:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'OK' });
 });
